@@ -29,6 +29,9 @@ public class Mobile {
 	}
 
 
+	public Mobile() { }
+
+
 	public String getScriptLocation() {
 		return scriptLocation;
 	}

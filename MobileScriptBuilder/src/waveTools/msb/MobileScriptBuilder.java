@@ -15,9 +15,11 @@ import java.awt.event.ActionEvent;
 import javax.swing.JTree;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.DecimalFormat;
@@ -32,6 +34,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeSelectionModel;
 
+import waveTools.msb.secondaryWindows.CreatureTemplateDialog;
 import waveTools.msb.secondaryWindows.Settings;
 import waveTools.msb.secondaryWindows.WeaponTemplateDialog;
 
@@ -73,11 +76,19 @@ import javax.swing.JProgressBar;
 import javax.swing.JCheckBox;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.JPopupMenu;
+
+import java.awt.Component;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
 
 public class MobileScriptBuilder {
 
 	private JFrame frmPswgToolsMbs;
-	private JFileChooser mobilesFolderSelect;
 	private JTree mobilesTree;
 	private JTextField tbCreatureName;
 	private JTextField tbScriptLocation;
@@ -122,6 +133,8 @@ public class MobileScriptBuilder {
 	private JButton btnAddNewCreatureTemp;
 	private JButton btnAddNewWeapTemp;
 	private JButton btnEditWeapTemp;
+	private JButton btnRemoveCreatureTemp;
+	private JButton btnEditCreatureTemp;
 	
 	
 	public static void main(String[] args) {
@@ -225,7 +238,7 @@ public class MobileScriptBuilder {
 		return coreLocation;
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked", "serial" })
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private void initialize() {
 		NumberFormatter basicIntFormat = new NumberFormatter();
 		//basicIntFormat.setAllowsInvalid(false);
@@ -246,16 +259,17 @@ public class MobileScriptBuilder {
 		JMenu mnFile = new JMenu("File");
 		menuBar.add(mnFile);
 
-		mobilesFolderSelect = new JFileChooser();
-		mobilesFolderSelect.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-		mobilesFolderSelect.setDialogTitle("Select directory containing mobile scripts");
-		if (coreLocation != null && !coreLocation.equals(" ") && !coreLocation.equals("")) {
-			mobilesFolderSelect.setCurrentDirectory(new File(coreLocation));
-		}
 		JMenuItem mntmLoadMobiles = new JMenuItem("Load Mobiles...");
 		mntmLoadMobiles.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
+				
+				JFileChooser mobilesFolderSelect = new JFileChooser();
+				mobilesFolderSelect.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+				mobilesFolderSelect.setDialogTitle("Select directory containing mobile scripts");
+				if (coreLocation != null && !coreLocation.equals(" ") && !coreLocation.equals(""))
+					mobilesFolderSelect.setCurrentDirectory(new File(coreLocation + "\\scripts"));
+				
 				int success = mobilesFolderSelect.showOpenDialog(frmPswgToolsMbs);
 
 				if (success == JFileChooser.APPROVE_OPTION) {
@@ -297,6 +311,9 @@ public class MobileScriptBuilder {
 		mobilesTree.addTreeSelectionListener(new TreeSelectionListener() {
 			@Override
 			public void valueChanged(TreeSelectionEvent e) {
+				if (e.getNewLeadSelectionPath() == null || e.getNewLeadSelectionPath().getLastPathComponent() == null)
+					return;
+				
 				DefaultMutableTreeNode node = (DefaultMutableTreeNode) e.getNewLeadSelectionPath().getLastPathComponent();
 				DefaultMutableTreeNode priorNode = null;
 
@@ -323,7 +340,7 @@ public class MobileScriptBuilder {
 					cmbDefaultAttack.setEnabled(true);
 					chckbxDeathblowEnabled.setEnabled(true);
 					
-					//btnAddNewCreatureTemp.setEnabled(true);
+					btnAddNewCreatureTemp.setEnabled(true);
 					btnAddNewWeapTemp.setEnabled(true);
 				}
 			}
@@ -331,20 +348,69 @@ public class MobileScriptBuilder {
 		mobilesTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
 
 		mobilesScrollPane.setViewportView(mobilesTree);
+		
+		JPopupMenu popupMenu = new JPopupMenu();
+		addPopup(mobilesTree, popupMenu);
+		
+		JMenuItem mntmRefreshMobiles = new JMenuItem("Refresh Mobiles");
+		mntmRefreshMobiles.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				if (mobilesLoaded)
+					populateMobilesTree(new File(coreLocation + "\\scripts\\mobiles"));
+			}
+		});
+		popupMenu.add(mntmRefreshMobiles);
 
 		JPanel buttonsPane = new JPanel();
 		buttonsPane.setBounds(224, 400, 401, 36);
 		frmPswgToolsMbs.getContentPane().add(buttonsPane);
 
 		JButton btnAddMobile = new JButton("New Mobile");
-		btnAddMobile.setEnabled(false);
 		btnAddMobile.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent event) {
 				if (!mobilesLoaded) {
-					Helpers.showMessageBox(frmPswgToolsMbs, "You cannot do that because you have not loaded the mobile folders!");
+					Helpers.showMessageBox(frmPswgToolsMbs, "You cannot do that because you have not loaded the mobiles folder yet!");
 					return;
 				}
+				FileFilter pyFilter = new FileNameExtensionFilter("Mobile Script File", "py");
+				JFileChooser newMobileDialog = new JFileChooser();
+				newMobileDialog.setFileSelectionMode(JFileChooser.FILES_ONLY);
+				newMobileDialog.setDialogTitle("Select where to save the mobile script");
+				newMobileDialog.setCurrentDirectory(new File(coreLocation + "\\scripts\\mobiles"));
+				newMobileDialog.setDialogType(JFileChooser.SAVE_DIALOG);
+				newMobileDialog.setFileFilter(pyFilter);
+				int selectedIndex = newMobileDialog.showSaveDialog(frmPswgToolsMbs);
+				if (selectedIndex == JFileChooser.APPROVE_OPTION) {
+					File file = newMobileDialog.getSelectedFile();
+					
+					if (!file.getAbsolutePath().endsWith(".py")) {
+						file = new File(file.getAbsolutePath() + ".py");
+					}
+					if (file.exists()) {
+						Helpers.showMessageBox(frmPswgToolsMbs, "That script already exists! Please choose a different name!");
+						return;
+					}
+					try {
+						file.createNewFile();
+						populateMobilesTree(new File(coreLocation + "\\scripts\\mobiles"));
+					} catch (IOException e) {
+						Helpers.showExceptionError(frmPswgToolsMbs, e.getLocalizedMessage());
+					}
+				}
+				/*DefaultMutableTreeNode currentNode = (DefaultMutableTreeNode) mobilesTree.getLeadSelectionPath().getLastPathComponent();
+				
+				if (currentNode.getUserObject() instanceof Mobile) {
+					Mobile currentMobile = (Mobile) currentNode.getUserObject();
+
+					String path = currentMobile.getScriptLocation();
+					newMobile.setScriptLocation(path);
+					
+					DefaultMutableTreeNode newNode = new DefaultMutableTreeNode();
+					newNode.setUserObject(newMobile);
+					((DefaultMutableTreeNode)currentNode.getParent()).add(newNode);
+					mobilesTree.updateUI();
+				}*/
 			}
 		});
 		buttonsPane.add(btnAddMobile);
@@ -359,16 +425,32 @@ public class MobileScriptBuilder {
 		buttonsPane.add(btnSave);
 		
 		btnBuildCurrent = new JButton("Build");
+		btnBuildCurrent.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				DefaultMutableTreeNode currentNode = (DefaultMutableTreeNode) mobilesTree.getSelectionPath().getLastPathComponent();
+				if (currentNode == null || !(currentNode.getUserObject() instanceof Mobile))
+					return;
+				
+				buildMobileScript((Mobile) currentNode.getUserObject());
+				
+				Helpers.showMessageBox(frmPswgToolsMbs, "Successfully Built (1) Mobile Script.");
+			}
+		});
 		btnBuildCurrent.setEnabled(false);
 		buttonsPane.add(btnBuildCurrent);
 		
 		btnBuildAll = new JButton("Build All");
+		btnBuildAll.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				modifiedTemplates.stream().forEach(mobile -> { buildMobileScript(mobile); });
+				Helpers.showMessageBox(frmPswgToolsMbs, "Successfully Built (" + modifiedTemplates.size() + ") Mobile Scripts.");
+			}
+		});
 		btnBuildAll.setEnabled(false);
 		buttonsPane.add(btnBuildAll);
 
 		JTabbedPane tabbedPane = new JTabbedPane();
 		tabbedPane.setBounds(224, 6, 391, 392);
-		tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
 		frmPswgToolsMbs.getContentPane().add(tabbedPane);
 
 		JPanel tpGenSettings = new JPanel();
@@ -509,35 +591,66 @@ public class MobileScriptBuilder {
 		tabbedPane.addTab("Creature Temps", null, tpCreatureTemplates, null);
 		tpCreatureTemplates.setLayout(null);
 
-		btnAddNewCreatureTemp = new JButton("Add");
-		btnAddNewCreatureTemp.setEnabled(false);
-		btnAddNewCreatureTemp.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-			}
-		});
-		btnAddNewCreatureTemp.setBounds(10, 256, 107, 26);
-		tpCreatureTemplates.add(btnAddNewCreatureTemp);
-
 		JScrollPane scrollPane_CreatureTemps = new JScrollPane();
 		scrollPane_CreatureTemps.setBounds(10, 10, 375, 234);
 		tpCreatureTemplates.add(scrollPane_CreatureTemps);
 
 		creatureTemps = new DefaultListModel();
 		listCreatureTemps = new JList();
-		listCreatureTemps.setModel(creatureTemps);
-		scrollPane_CreatureTemps.setViewportView(listCreatureTemps);
-
-		JButton btnRemoveCreatureTemp = new JButton("Remove");
-		btnRemoveCreatureTemp.setEnabled(false);
-		btnRemoveCreatureTemp.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-
+		listCreatureTemps.addListSelectionListener(new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent event) {
+				try {
+					if (creatureTemps.get(event.getFirstIndex()) != null) {
+						btnRemoveCreatureTemp.setEnabled(true);
+						btnEditCreatureTemp.setEnabled(true);
+					}
+				} catch (ArrayIndexOutOfBoundsException e) {
+					btnRemoveCreatureTemp.setEnabled(false);
+					btnEditCreatureTemp.setEnabled(false);
+				}
 			}
 		});
-		btnRemoveCreatureTemp.setBounds(129, 256, 107, 26);
-		tpCreatureTemplates.add(btnRemoveCreatureTemp);
+		listCreatureTemps.setModel(creatureTemps);
+		scrollPane_CreatureTemps.setViewportView(listCreatureTemps);
+		
+		JPanel panelCreatureTempBtns = new JPanel();
+		panelCreatureTempBtns.setBounds(6, 255, 379, 42);
+		tpCreatureTemplates.add(panelCreatureTempBtns);
+		
+				btnAddNewCreatureTemp = new JButton("Add");
+				panelCreatureTempBtns.add(btnAddNewCreatureTemp);
+				btnAddNewCreatureTemp.setEnabled(false);
+				
+						btnRemoveCreatureTemp = new JButton("Remove");
+						panelCreatureTempBtns.add(btnRemoveCreatureTemp);
+						btnRemoveCreatureTemp.setEnabled(false);
+						
+						btnEditCreatureTemp = new JButton("Edit");
+						btnEditCreatureTemp.addActionListener(new ActionListener() {
+							public void actionPerformed(ActionEvent arg0) {
+								CreatureTemplateDialog dialog = new CreatureTemplateDialog();
+								String template = listCreatureTemps.getSelectedValue();
+								dialog.setTbCreatureTempNameText(template);
+								
+								dialog.setVisible(true);
+							}
+						});
+						btnEditCreatureTemp.setEnabled(false);
+						panelCreatureTempBtns.add(btnEditCreatureTemp);
+						btnRemoveCreatureTemp.addActionListener(new ActionListener() {
+							@Override
+							public void actionPerformed(ActionEvent arg0) {
+								int index = listCreatureTemps.getSelectedIndex();
+								creatureTemps.remove(index);
+							}
+						});
+				btnAddNewCreatureTemp.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent arg0) {
+						CreatureTemplateDialog dialog = new CreatureTemplateDialog();
+						dialog.setVisible(true);
+					}
+				});
 
 		JPanel tpWeaponTemplates = new JPanel();
 		tabbedPane.addTab("Weapon Temps", null, tpWeaponTemplates, null);
@@ -574,6 +687,15 @@ public class MobileScriptBuilder {
 				wpTmpBtnsPanel.add(btnAddNewWeapTemp);
 				
 						btnRemoveWeapTemp = new JButton("Remove");
+						btnRemoveWeapTemp.addActionListener(new ActionListener() {
+							public void actionPerformed(ActionEvent arg0) {
+								int index = listWeaponTemps.getSelectedIndex();
+								
+								try {
+									weaponTemps.remove(index);
+								} catch (Exception e) { Helpers.showExceptionError(frmPswgToolsMbs, e.getLocalizedMessage());}
+							}
+						});
 						btnRemoveWeapTemp.setEnabled(false);
 						wpTmpBtnsPanel.add(btnRemoveWeapTemp);
 						
@@ -594,6 +716,10 @@ public class MobileScriptBuilder {
 						});
 						btnEditWeapTemp.setEnabled(false);
 						wpTmpBtnsPanel.add(btnEditWeapTemp);
+						
+						JPanel tpMiscSettings = new JPanel();
+						tabbedPane.addTab("Misc. Settings", null, tpMiscSettings, null);
+						tabbedPane.setEnabledAt(3, false);
 				btnAddNewWeapTemp.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent arg0) {
 						weaponTempDialog.getTbWeaponTemp().setText("");
@@ -614,6 +740,7 @@ public class MobileScriptBuilder {
 				line = line.replaceAll("\\s", "");
 				if (line.equals(""))
 					continue;
+				else if (line.startsWith("mobileTemplate.setCreatureName")) { baseMobile.setCreatureName(line.replace("mobileTemplate.setCreatureName('", "").replace("')", "")); }
 				else if (line.startsWith("mobileTemplate.setLevel")) { baseMobile.setLevel(Integer.valueOf(line.replace("mobileTemplate.setLevel(", "").replace(")", ""))); }
 				else if (line.startsWith("mobileTemplate.setMinLevel")) { baseMobile.setMinLevel(Integer.valueOf(line.replace("mobileTemplate.setMinLevel(", "").replace(")", ""))); }
 				else if (line.startsWith("mobileTemplate.setMaxLevel")) { baseMobile.setMinLevel(Integer.valueOf(line.replace("mobileTemplate.setMaxLevel(", "").replace(")", ""))); }
@@ -672,7 +799,7 @@ public class MobileScriptBuilder {
 				for (File file : mobilesDirectory.listFiles()) {
 
 					if (file.isFile()) {
-						Mobile mobile = new Mobile(file.getName(), file.getPath());
+						Mobile mobile = new Mobile(file.getName().split(".py")[0], file.getPath());
 						node = new DefaultMutableTreeNode(mobile);
 						rootNode.add(node);
 						setProgress(currentFileNumber++);
@@ -734,7 +861,7 @@ public class MobileScriptBuilder {
 	private void populateScriptCreator(Mobile mobileTemplate) {
 		creatureTemps.clear();
 		
-		tbCreatureName.setText(mobileTemplate.getCreatureName());
+		tbCreatureName.setText(mobileTemplate.getCreatureName().split(".py")[0]);
 		tbScriptLocation.setText(mobileTemplate.getScriptLocation());
 		tbCreatureLevel.setValue(mobileTemplate.getLevel());
 		tbMinLevel.setValue(mobileTemplate.getMinLevel());
@@ -775,6 +902,75 @@ public class MobileScriptBuilder {
 		btnSave.setEnabled(true); // TODO: Script compiling
 	}
 	
+	private void buildMobileScript(Mobile mobile) {
+		try {
+			BufferedWriter writer = new BufferedWriter(new FileWriter(mobile.getScriptLocation()));
+			writer.write("import sys\n");
+			writer.write("from services.spawn import MobileTemplate\n");
+			if (mobile.getWeaponTemplates().size() > 0) 
+				writer.write("from services.spawn import WeaponTemplate\n");
+			writer.write("from java.util import Vector\n");
+			writer.newLine();
+			
+			writer.write("def addTemplate(core):\n");
+			writer.write("\tmobileTemplate = MobileTemplate()\n");
+			writer.newLine();
+			
+			writer.write("\tmobileTemplate.setCreatureName('" + mobile.getCreatureName() + "')\n");
+			writer.write("\tmobileTemplate.setLevel(" + mobile.getLevel() + ")\n");
+			writer.write("\tmobileTemplate.setDifficulty(" + mobile.getDifficulty() + ")\n");
+			writer.write("\tmobileTemplate.setAttackRange(" + mobile.getAttackRange() + ")\n");
+			writer.write("\tmobileTemplate.setAttackSpeed(" + mobile.getAttackSpeed() + ")\n");
+			writer.write("\tmobileTemplate.setWeaponType(" + mobile.getWeaponType() + ")\n");
+			//writer.write("\tmobileTemplate.setMinSpawnDistance(" + 1 + ")\n");
+			//writer.write("\tmobileTemplate.setMaxSpawnDistance(" + 1 + ")\n");
+			writer.write("\tmobileTemplate.setDeathblow(" + (mobile.isDeathblowEnabled() ? "True" : "False") + ")\n");
+			//writer.write("\tmobileTemplate.setScale(" + 1 + ")\n");
+			//writer.write("\tmobileTemplate.setSocialGroup('" + mobile.getSocialGroup() + "')\n");
+			//writer.write("\tmobileTemplate.setAssistRange(" + mobile.getAssistRange() + ")\n");
+			//writer.write("\tmobileTemplate.setStalker(" + (mobile.isStalker() ? "True" : "False") + ")\n");
+			//writer.write("\tmobileTemplate.setFaction('" + mobile.getFaction() + "')\n");
+			//writer.write("\tmobileTemplate.setFactionStatus(" + 1 + ")\n");
+			writer.newLine();
+			
+			writer.write("\ttemplates = new Vector()\n");
+			if (mobile.getCreatureTemplates().size() > 0) {
+				for (String temp : mobile.getCreatureTemplates()) {
+					writer.write("\ttemplates.add('" + temp + "')\n");
+				}
+			}
+			writer.write("\tmobileTemplate.setTemplates(templates)\n");
+			writer.newLine();
+			
+			writer.write("\tweaponTemplates = Vector()\n");
+			if (mobile.getWeaponTemplates().size() > 0) {
+				for (Weapon weapon : mobile.getWeaponTemplates()) {
+					writer.write("\tweaponTemplate = WeaponTemplate('" + weapon.getTemplate() + "', " + weapon.getWeaponType() + ", " 
+							+ weapon.getAttackSpeed() +")\n");
+					writer.write("\tweaponTemplates.add(weaponTemplate)\n");
+				}
+			}
+			writer.write("\tmobileTemplate.setWeaponTemplateVector(weaponTemplates)\n");
+			writer.newLine();
+			
+			writer.write("\tattacks = new Vector()\n");
+			if (mobile.getAttacks().size() > 0) {
+				for (String attack : mobile.getAttacks()) {
+					writer.write("\tattacks.add('" + attack + "')\n");
+				}
+			}
+			writer.write("\tmobileTemplate.setDefaultAttack('" + mobile.getDefaultAttack() + "')\n");
+			writer.write("\tmobileTemplate.setAttacks(attacks)");
+			writer.newLine();
+			
+			writer.write("\tcore.spawnService.addMobileTemplate('" + mobile.getCreatureName() + "', mobileTemplate)\n\treturn");
+			
+			writer.close();
+		} catch (Exception e) {
+			Helpers.showExceptionError(frmPswgToolsMbs, e.getLocalizedMessage());
+		}
+	}
+	
 	private void saveCurrentValues() {
 		Mobile mobileTemplate = (Mobile) ((DefaultMutableTreeNode) mobilesTree.getSelectionPath().getLastPathComponent()).getUserObject();
 		System.out.println("Saved values for Template: " + mobileTemplate.getCreatureName());
@@ -799,6 +995,8 @@ public class MobileScriptBuilder {
 			String[] stringArray = Arrays.copyOf(objArray, objArray.length, String[].class);
 			Vector<String> creatureTemplates = new Vector<String>(Arrays.asList(stringArray));
 			mobileTemplate.setCreatureTemplates(creatureTemplates);
+		} else {
+			mobileTemplate.setCreatureTemplates(new Vector<String>());
 		}
 
 		if (weaponTemps.size() > 0) {
@@ -812,6 +1010,8 @@ public class MobileScriptBuilder {
 			}
 			
 			mobileTemplate.setWeaponTemplates(updatedWeaponTemps);
+		} else {
+			mobileTemplate.setWeaponTemplates(new Vector<Weapon>());
 		}
 
 		/*
@@ -822,13 +1022,13 @@ public class MobileScriptBuilder {
 		
 		mobileTemplate.setDirty(true);
 		
-		//if (!btnBuildCurrent.isEnabled())
-			//btnBuildCurrent.setEnabled(true);
+		if (!btnBuildCurrent.isEnabled())
+			btnBuildCurrent.setEnabled(true);
 		
 		modifiedTemplates.add(mobileTemplate);
 		
-		//if (modifiedTemplates.size() >= 2 && !btnBuildAll.isEnabled())
-			//btnBuildAll.setEnabled(true);
+		if (modifiedTemplates.size() >= 2 && !btnBuildAll.isEnabled())
+			btnBuildAll.setEnabled(true);
 		
 		mobilesTree.updateUI(); // Show Asterisk 
 	}
@@ -876,8 +1076,17 @@ public class MobileScriptBuilder {
 		return weaponTemps;
 	}
 
+	@SuppressWarnings("unchecked")
+	public DefaultListModel<String> getCreatureTemps() {
+		return creatureTemps;
+	}
+	
 	public void setWeaponTemps(DefaultListModel<String> weaponTemps) {
 		this.weaponTemps = weaponTemps;
+	}
+
+	public void setCreatureTemps(DefaultListModel<String> creatureTemps) {
+		this.creatureTemps = creatureTemps;
 	}
 
 	public JList<String> getListWeaponTemps() {
@@ -886,5 +1095,30 @@ public class MobileScriptBuilder {
 
 	public void setListWeaponTemps(JList<String> listWeaponTemps) {
 		this.listWeaponTemps = listWeaponTemps;
+	}
+	
+	public JList<String> getListCreatureTemps() {
+		return listCreatureTemps;
+	}
+
+	public JTree getMobilesTree() {
+		return mobilesTree;
+	}
+	private static void addPopup(Component component, final JPopupMenu popup) {
+		component.addMouseListener(new MouseAdapter() {
+			public void mousePressed(MouseEvent e) {
+				if (e.isPopupTrigger()) {
+					showMenu(e);
+				}
+			}
+			public void mouseReleased(MouseEvent e) {
+				if (e.isPopupTrigger()) {
+					showMenu(e);
+				}
+			}
+			private void showMenu(MouseEvent e) {
+				popup.show(e.getComponent(), e.getX(), e.getY());
+			}
+		});
 	}
 }

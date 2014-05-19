@@ -117,7 +117,7 @@ public class WeaponTemplateDialog extends JDialog {
 					public void actionPerformed(ActionEvent arg0) {
 						String weaponTemp = tbWeaponTemp.getText();
 						if (!weaponTemp.startsWith("object/weapon/") || !weaponTemp.endsWith(".iff")) {
-							Helpers.showMessageBox(contentPanel, tbWeaponTemp.getText() + " is an invalid weapon template.");
+							Helpers.showMessageBox(contentPanel, weaponTemp + " is an invalid weapon template.");
 							return;
 						}
 						String attackSpeed = "";
