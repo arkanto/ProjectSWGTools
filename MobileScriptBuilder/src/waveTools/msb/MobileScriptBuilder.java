@@ -22,6 +22,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -85,6 +86,23 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
+import java.awt.GridBagLayout;
+import java.awt.GridBagConstraints;
+import java.awt.Insets;
+import java.awt.GridLayout;
+
+import com.jgoodies.forms.layout.FormLayout;
+import com.jgoodies.forms.layout.ColumnSpec;
+import com.jgoodies.forms.layout.RowSpec;
+
+import javax.swing.GroupLayout;
+import javax.swing.GroupLayout.Alignment;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.LineBorder;
+import javax.swing.border.EtchedBorder;
+import javax.swing.border.SoftBevelBorder;
+import java.awt.event.ItemListener;
+import java.awt.event.ItemEvent;
 
 public class MobileScriptBuilder {
 
@@ -124,6 +142,8 @@ public class MobileScriptBuilder {
 	private DefaultListModel weaponTemps;
 	@SuppressWarnings("rawtypes")
 	private DefaultListModel creatureTemps;
+	@SuppressWarnings("rawtypes")
+	private DefaultListModel attacks;
 	private JButton btnBuildAll;
 	private JButton btnBuildCurrent;
 	
@@ -135,6 +155,19 @@ public class MobileScriptBuilder {
 	private JButton btnEditWeapTemp;
 	private JButton btnRemoveCreatureTemp;
 	private JButton btnEditCreatureTemp;
+	private JTextField tbSocialGroup;
+	private JFormattedTextField tbMinSpawnDistance;
+	private JFormattedTextField tbMaxSpawnDistance;
+	private JFormattedTextField tbRespawnTime;
+	private JComboBox cmbFaction;
+	private JComboBox cmbFactionStatus;
+	private JFormattedTextField tbAssistRange;
+	private JCheckBox chckbxStalker;
+	private JPanel tpResourceSettings;
+	private JCheckBox chckbxHarvestable;
+	private JCheckBox chckbxAgressive;
+	private JCheckBox chckbxAttackable;
+	private JCheckBox chckbxInvulnerable;
 	
 	
 	public static void main(String[] args) {
@@ -362,7 +395,8 @@ public class MobileScriptBuilder {
 		popupMenu.add(mntmRefreshMobiles);
 
 		JPanel buttonsPane = new JPanel();
-		buttonsPane.setBounds(224, 400, 401, 36);
+		buttonsPane.setBorder(new SoftBevelBorder(BevelBorder.RAISED, null, null, null, null));
+		buttonsPane.setBounds(224, 400, 391, 42);
 		frmPswgToolsMbs.getContentPane().add(buttonsPane);
 
 		JButton btnAddMobile = new JButton("New Mobile");
@@ -454,7 +488,7 @@ public class MobileScriptBuilder {
 		frmPswgToolsMbs.getContentPane().add(tabbedPane);
 
 		JPanel tpGenSettings = new JPanel();
-		tpGenSettings.setBorder(new BevelBorder(BevelBorder.RAISED, null, null, null, null));
+		tpGenSettings.setBorder(new EtchedBorder(EtchedBorder.RAISED, null, null));
 		tpGenSettings.setForeground(Color.BLACK);
 		tabbedPane.addTab("General Settings", null, tpGenSettings, null);
 		tpGenSettings.setLayout(null);
@@ -529,11 +563,14 @@ public class MobileScriptBuilder {
 		scrollPane_Attacks.setViewportView(listAttacks);
 
 		JLabel lblAttacks = new JLabel("Attacks:");
-		lblAttacks.setEnabled(false);
 		lblAttacks.setBounds(10, 189, 55, 16);
 		tpGenSettings.add(lblAttacks);
 
 		JButton btnAddAttack = new JButton("Add Attack");
+		btnAddAttack.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+			}
+		});
 		btnAddAttack.setEnabled(false);
 		btnAddAttack.setBounds(220, 221, 114, 28);
 		tpGenSettings.add(btnAddAttack);
@@ -588,6 +625,7 @@ public class MobileScriptBuilder {
 		tpGenSettings.add(chckbxDeathblowEnabled);
 
 		JPanel tpCreatureTemplates = new JPanel();
+		tpCreatureTemplates.setBorder(new EtchedBorder(EtchedBorder.RAISED, null, null));
 		tabbedPane.addTab("Creature Temps", null, tpCreatureTemplates, null);
 		tpCreatureTemplates.setLayout(null);
 
@@ -653,6 +691,7 @@ public class MobileScriptBuilder {
 				});
 
 		JPanel tpWeaponTemplates = new JPanel();
+		tpWeaponTemplates.setBorder(new EtchedBorder(EtchedBorder.RAISED, null, null));
 		tabbedPane.addTab("Weapon Temps", null, tpWeaponTemplates, null);
 		tpWeaponTemplates.setLayout(null);
 
@@ -718,8 +757,124 @@ public class MobileScriptBuilder {
 						wpTmpBtnsPanel.add(btnEditWeapTemp);
 						
 						JPanel tpMiscSettings = new JPanel();
+						tpMiscSettings.setBorder(new EtchedBorder(EtchedBorder.RAISED, null, null));
 						tabbedPane.addTab("Misc. Settings", null, tpMiscSettings, null);
-						tabbedPane.setEnabledAt(3, false);
+						tpMiscSettings.setLayout(null);
+						
+						JPanel panelSpawnSettings = new JPanel();
+						panelSpawnSettings.setBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null));
+						panelSpawnSettings.setBounds(18, 27, 324, 127);
+						tpMiscSettings.add(panelSpawnSettings);
+						panelSpawnSettings.setLayout(null);
+						
+						JLabel lblMinSpawnDistance = new JLabel("Min. Spawn Distance");
+						lblMinSpawnDistance.setBounds(6, 16, 120, 16);
+						panelSpawnSettings.add(lblMinSpawnDistance);
+						
+						JLabel lblMaxSpawnDistance = new JLabel("Max. Spawn Distance");
+						lblMaxSpawnDistance.setBounds(6, 46, 120, 16);
+						panelSpawnSettings.add(lblMaxSpawnDistance);
+						
+						tbMinSpawnDistance = new JFormattedTextField();
+						tbMinSpawnDistance.setBounds(129, 10, 36, 28);
+						panelSpawnSettings.add(tbMinSpawnDistance);
+						
+						tbMaxSpawnDistance = new JFormattedTextField();
+						tbMaxSpawnDistance.setBounds(129, 40, 36, 28);
+						panelSpawnSettings.add(tbMaxSpawnDistance);
+						
+						JLabel lblSocialGroup = new JLabel("Social Group");
+						lblSocialGroup.setBounds(6, 74, 79, 16);
+						panelSpawnSettings.add(lblSocialGroup);
+						
+						tbSocialGroup = new JTextField();
+						tbSocialGroup.setBounds(82, 68, 98, 28);
+						panelSpawnSettings.add(tbSocialGroup);
+						tbSocialGroup.setColumns(10);
+						
+						JLabel lblRespawnTime = new JLabel("Respawn Time");
+						lblRespawnTime.setBounds(6, 102, 89, 16);
+						panelSpawnSettings.add(lblRespawnTime);
+						
+						tbRespawnTime = new JFormattedTextField();
+						tbRespawnTime.setBounds(92, 96, 51, 28);
+						panelSpawnSettings.add(tbRespawnTime);
+						
+						chckbxStalker = new JCheckBox("Follows Enemy");
+						chckbxStalker.setBounds(195, 15, 112, 18);
+						panelSpawnSettings.add(chckbxStalker);
+						
+						JLabel lblAssistRange = new JLabel("Assist Range");
+						lblAssistRange.setBounds(187, 46, 79, 16);
+						panelSpawnSettings.add(lblAssistRange);
+						
+						tbAssistRange = new JFormattedTextField();
+						tbAssistRange.setBounds(266, 40, 41, 28);
+						panelSpawnSettings.add(tbAssistRange);
+						
+						JLabel lblSpawnSettings = new JLabel("Spawn Settings");
+						lblSpawnSettings.setBounds(18, 6, 94, 16);
+						tpMiscSettings.add(lblSpawnSettings);
+						lblSpawnSettings.setFont(new Font("SansSerif", Font.BOLD | Font.ITALIC, 12));
+						
+						JLabel lblFactionSettings = new JLabel("Faction Settings");
+						lblFactionSettings.setFont(new Font("SansSerif", Font.BOLD | Font.ITALIC, 12));
+						lblFactionSettings.setBounds(18, 161, 94, 16);
+						tpMiscSettings.add(lblFactionSettings);
+						
+						JPanel panelFactionSettings = new JPanel();
+						panelFactionSettings.setBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null));
+						panelFactionSettings.setBounds(18, 178, 177, 75);
+						tpMiscSettings.add(panelFactionSettings);
+						panelFactionSettings.setLayout(null);
+						
+						JLabel lblFaction = new JLabel("Faction");
+						lblFaction.setBounds(6, 12, 40, 16);
+						panelFactionSettings.add(lblFaction);
+						
+						cmbFaction = new JComboBox();
+						cmbFaction.setBounds(53, 7, 115, 26);
+						cmbFaction.setModel(new DefaultComboBoxModel(new String[] {"Imperial", "Rebel", "Neutral"}));
+						panelFactionSettings.add(cmbFaction);
+						
+						JLabel lblFactionStatus = new JLabel("Status");
+						lblFactionStatus.setBounds(6, 43, 56, 16);
+						panelFactionSettings.add(lblFactionStatus);
+						
+						cmbFactionStatus = new JComboBox();
+						cmbFactionStatus.setBounds(53, 40, 115, 26);
+						cmbFactionStatus.setModel(new DefaultComboBoxModel(new String[] {"On Leave", "Combatant", "Special Forces"}));
+						panelFactionSettings.add(cmbFactionStatus);
+						
+						JLabel lblOptions = new JLabel("Options");
+						lblOptions.setFont(new Font("SansSerif", Font.BOLD | Font.ITALIC, 12));
+						lblOptions.setBounds(218, 161, 56, 16);
+						tpMiscSettings.add(lblOptions);
+						
+						JPanel panel = new JPanel();
+						panel.setBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null));
+						panel.setBounds(218, 178, 124, 117);
+						tpMiscSettings.add(panel);
+						
+						chckbxHarvestable = new JCheckBox("Harvestable");
+						panel.add(chckbxHarvestable);
+						
+						chckbxAgressive = new JCheckBox("Agressive");
+						chckbxAgressive.setEnabled(false);
+						panel.add(chckbxAgressive);
+						
+						chckbxAttackable = new JCheckBox("Attackable");
+						chckbxAttackable.setEnabled(false);
+						chckbxAttackable.setSelected(true);
+						panel.add(chckbxAttackable);
+						
+						chckbxInvulnerable = new JCheckBox("Invulnerable");
+						chckbxInvulnerable.setEnabled(false);
+						panel.add(chckbxInvulnerable);
+						
+						tpResourceSettings = new JPanel();
+						tabbedPane.addTab("Resource Settings", null, tpResourceSettings, null);
+						tabbedPane.setEnabledAt(4, false);
 				btnAddNewWeapTemp.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent arg0) {
 						weaponTempDialog.getTbWeaponTemp().setText("");
@@ -738,7 +893,7 @@ public class MobileScriptBuilder {
 		try(BufferedReader br = new BufferedReader(new FileReader(script))) {
 			for(String line; (line = br.readLine()) != null; ) {
 				line = line.replaceAll("\\s", "");
-				if (line.equals(""))
+				if (line.isEmpty() || line.equals("") || line.equals("\treturn") || line.startsWith("from") || line.startsWith("import") || line.startsWith("def"))
 					continue;
 				else if (line.startsWith("mobileTemplate.setCreatureName")) { baseMobile.setCreatureName(line.replace("mobileTemplate.setCreatureName('", "").replace("')", "")); }
 				else if (line.startsWith("mobileTemplate.setLevel")) { baseMobile.setLevel(Integer.valueOf(line.replace("mobileTemplate.setLevel(", "").replace(")", ""))); }
@@ -748,8 +903,8 @@ public class MobileScriptBuilder {
 				else if (line.startsWith("mobileTemplate.setAttackRange")) { baseMobile.setAttackRange(Integer.valueOf(line.replace("mobileTemplate.setAttackRange(", "").replace(")", ""))); }
 				else if (line.startsWith("mobileTemplate.setAttackSpeed")) { baseMobile.setAttackSpeed(Float.valueOf(line.replace("mobileTemplate.setAttackSpeed(", "").replace(")", ""))); }
 				else if (line.startsWith("mobileTemplate.setWeaponType")) { baseMobile.setWeaponType(Integer.valueOf(line.replace("mobileTemplate.setWeaponType(", "").replace(")", ""))); }
-				// mobileTemplate.setMinSpawnDistance(3)
-				// mobileTemplate.setMaxSpawnDistance(5)
+				else if (line.startsWith("mobileTemplate.setMinSpawnDistance")) { baseMobile.setMinSpawnDistance(Integer.valueOf(line.replace("mobileTemplate.setMinSpawnDistance(", "").replace(")", ""))); }
+				else if (line.startsWith("mobileTemplate.setMaxSpawnDistance")) { baseMobile.setMaxSpawnDistance(Integer.valueOf(line.replace("mobileTemplate.setMaxSpawnDistance(", "").replace(")", ""))); }
 				else if (line.startsWith("mobileTemplate.setDeathblow")) { 
 					switch(line.replace("mobileTemplate.setDeathblow(", "").replace(")", "")) {
 						case "True":
@@ -760,9 +915,28 @@ public class MobileScriptBuilder {
 							break;
 					}
 				}
-				/*
-		        mobileTemplate.setSocialGroup('dark jedi')
-		        mobileTemplate.setAssistRange(12)*/
+				//mobileTemplate.setScale
+				//else if (line.startsWith("mobileTemplate.setMeatType(\"")) { baseMobile.setMeatType(line.replace("mobileTemplate.setMeatType(\"", "").replace("\")", "")); }
+				//else if (line.startsWith("mobileTemplate.setMeatAmount(")) { baseMobile.setMeatAmount(Integer.valueOf(line.replace("mobileTemplate.setMeatAmount(", "").replace(")", ""))); }
+				//else if (line.startsWith("mobileTemplate.setHideType(\"")) { baseMobile.setHideType(line.replace("mobileTemplate.setHideType(\"", "").replace("\")", "")); }
+				//else if (line.startsWith("mobileTemplate.setHideAmount(")) { baseMobile.setHideAmount(Integer.valueOf(line.replace("mobileTemplate.setHideAmount(", "").replace(")", ""))); }
+				//else if (line.startsWith("mobileTemplate.setBoneType(\"")) { baseMobile.setBoneType(line.replace("mobileTemplate.setBoneType(\"", "").replace("\")", "")); }
+				//else if (line.startsWith("mobileTemplate.setBoneAmount(")) { baseMobile.setBoneAmount(Integer.valueOf(line.replace("mobileTemplate.setBoneAmount(", "").replace(")", ""))); }
+				
+				else if (line.startsWith("mobileTemplate.setSocialGroup(\"")) { baseMobile.setSocialGroup(line.replace("mobileTemplate.setSocialGroup(\"", "").replace("\")", "")); }
+				else if (line.startsWith("mobileTemplate.setAssistRange")) { baseMobile.setAssistRange(Integer.valueOf(line.replace("mobileTemplate.setAssistRange(", "").replace(")", ""))); }
+				else if (line.startsWith("mobileTemplate.setRespawnTime")) { baseMobile.setRespawnTime(Integer.valueOf(line.replace("mobileTemplate.setRespawnTime(", "").replace(")", ""))); }
+
+				else if (line.startsWith("mobileTemplate.setStalker")) { 
+					switch(line.replace("mobileTemplate.setStalker(", "").replace(")", "")) {
+						case "True":
+							baseMobile.setStalker(true);
+							break;
+						case "False":
+							baseMobile.setStalker(false);
+							break;
+					}
+				}
 				else if (line.startsWith("templates.add")) { baseMobile.addCreatureTemplate(line.replace("templates.add('", "").replace("')", "")); }
 				else if (line.startsWith("weapontemplate=WeaponTemplate")) {
 					String baseTemp = line.replace("weapontemplate=WeaponTemplate('", "").replace("'", "").replace(")", "");
@@ -861,19 +1035,26 @@ public class MobileScriptBuilder {
 	private void populateScriptCreator(Mobile mobileTemplate) {
 		creatureTemps.clear();
 		
-		tbCreatureName.setText(mobileTemplate.getCreatureName().split(".py")[0]);
+		tbCreatureName.setText(mobileTemplate.getCreatureName());
 		tbScriptLocation.setText(mobileTemplate.getScriptLocation());
 		tbCreatureLevel.setValue(mobileTemplate.getLevel());
 		tbMinLevel.setValue(mobileTemplate.getMinLevel());
 		tbMaxLevel.setValue(mobileTemplate.getMaxLevel());
+		tbMinSpawnDistance.setValue(mobileTemplate.getMinSpawnDistance());
+		tbMaxSpawnDistance.setValue(mobileTemplate.getMaxSpawnDistance());
 		tbAttackRange.setValue(mobileTemplate.getAttackRange());
 		tbAttackSpeed.setValue(mobileTemplate.getAttackSpeed());
-
+		tbAssistRange.setValue(mobileTemplate.getAssistRange());
+		tbSocialGroup.setText(mobileTemplate.getSocialGroup());
+		tbRespawnTime.setValue(mobileTemplate.getRespawnTime());
 		cmbDefaultAttack.setSelectedItem(mobileTemplate.getDefaultAttack());
 		cmbDifficulty.setSelectedIndex(mobileTemplate.getDifficulty());
 		cmbWeaponType.setSelectedIndex(mobileTemplate.getWeaponType());
+		cmbFaction.setSelectedItem(mobileTemplate.getFaction());
+		cmbFactionStatus.setSelectedIndex(mobileTemplate.getFactionStatus());
 
 		chckbxDeathblowEnabled.setSelected(mobileTemplate.isDeathblowEnabled());
+		chckbxStalker.setSelected(mobileTemplate.isStalker());
 
 		if (mobileTemplate.getCreatureTemplates().size() != 0) {
 			for (String s : mobileTemplate.getCreatureTemplates()) { creatureTemps.addElement(s); }
@@ -898,12 +1079,14 @@ public class MobileScriptBuilder {
 		else
 			listAttacks.setListData(new String[] { "Template has no attacks." });
 
-		//btnSaveAll.setEnabled(true); // TODO: Handle checking of multiple mobiles
-		btnSave.setEnabled(true); // TODO: Script compiling
+		btnSave.setEnabled(true);
 	}
 	
 	private void buildMobileScript(Mobile mobile) {
 		try {
+			
+			tryBackup(new File(mobile.getScriptLocation()), 1);
+			
 			BufferedWriter writer = new BufferedWriter(new FileWriter(mobile.getScriptLocation()));
 			writer.write("import sys\n");
 			writer.write("from services.spawn import MobileTemplate\n");
@@ -917,20 +1100,24 @@ public class MobileScriptBuilder {
 			writer.newLine();
 			
 			writer.write("\tmobileTemplate.setCreatureName('" + mobile.getCreatureName() + "')\n");
-			writer.write("\tmobileTemplate.setLevel(" + mobile.getLevel() + ")\n");
-			writer.write("\tmobileTemplate.setDifficulty(" + mobile.getDifficulty() + ")\n");
-			writer.write("\tmobileTemplate.setAttackRange(" + mobile.getAttackRange() + ")\n");
-			writer.write("\tmobileTemplate.setAttackSpeed(" + mobile.getAttackSpeed() + ")\n");
-			writer.write("\tmobileTemplate.setWeaponType(" + mobile.getWeaponType() + ")\n");
-			//writer.write("\tmobileTemplate.setMinSpawnDistance(" + 1 + ")\n");
-			//writer.write("\tmobileTemplate.setMaxSpawnDistance(" + 1 + ")\n");
+			writer.write("\tmobileTemplate.setLevel(" + String.valueOf(mobile.getLevel()) + ")\n");
+			writer.write("\tmobileTemplate.setDifficulty(" + String.valueOf(mobile.getDifficulty()) + ")\n");
+			writer.write("\tmobileTemplate.setAttackRange(" + String.valueOf(mobile.getAttackRange()) + ")\n");
+			writer.write("\tmobileTemplate.setAttackSpeed(" + String.valueOf(mobile.getAttackSpeed()) + ")\n");
+			writer.write("\tmobileTemplate.setWeaponType(" + String.valueOf(mobile.getWeaponType()) + ")\n");
+			writer.write("\tmobileTemplate.setMinSpawnDistance(" + String.valueOf(mobile.getMinSpawnDistance()) + ")\n");
+			writer.write("\tmobileTemplate.setMaxSpawnDistance(" + String.valueOf(mobile.getMaxSpawnDistance()) + ")\n");
 			writer.write("\tmobileTemplate.setDeathblow(" + (mobile.isDeathblowEnabled() ? "True" : "False") + ")\n");
 			//writer.write("\tmobileTemplate.setScale(" + 1 + ")\n");
-			//writer.write("\tmobileTemplate.setSocialGroup('" + mobile.getSocialGroup() + "')\n");
-			//writer.write("\tmobileTemplate.setAssistRange(" + mobile.getAssistRange() + ")\n");
-			//writer.write("\tmobileTemplate.setStalker(" + (mobile.isStalker() ? "True" : "False") + ")\n");
-			//writer.write("\tmobileTemplate.setFaction('" + mobile.getFaction() + "')\n");
-			//writer.write("\tmobileTemplate.setFactionStatus(" + 1 + ")\n");
+			if (mobile.getSocialGroup() != null && !mobile.getSocialGroup().isEmpty())
+				writer.write("\tmobileTemplate.setSocialGroup('" + mobile.getSocialGroup() + "')\n");
+			writer.write("\tmobileTemplate.setAssistRange(" + String.valueOf(mobile.getAssistRange()) + ")\n");
+			writer.write("\tmobileTemplate.setStalker(" + (mobile.isStalker() ? "True" : "False") + ")\n");
+			
+			if (mobile.getFaction() != null && !mobile.getFaction().equals("") && !mobile.getFaction().equalsIgnoreCase("neutral")) {
+				writer.write("\tmobileTemplate.setFaction('" + mobile.getFaction().toLowerCase() + "')\n");
+				writer.write("\tmobileTemplate.setFactionStatus(" + String.valueOf(mobile.getFactionStatus()) + ")\n");
+			}
 			writer.newLine();
 			
 			writer.write("\ttemplates = new Vector()\n");
@@ -945,9 +1132,9 @@ public class MobileScriptBuilder {
 			writer.write("\tweaponTemplates = Vector()\n");
 			if (mobile.getWeaponTemplates().size() > 0) {
 				for (Weapon weapon : mobile.getWeaponTemplates()) {
-					writer.write("\tweaponTemplate = WeaponTemplate('" + weapon.getTemplate() + "', " + weapon.getWeaponType() + ", " 
+					writer.write("\tweapontemplate = WeaponTemplate('" + weapon.getTemplate() + "', " + weapon.getWeaponType() + ", " 
 							+ weapon.getAttackSpeed() +")\n");
-					writer.write("\tweaponTemplates.add(weaponTemplate)\n");
+					writer.write("\tweaponTemplates.add(weapontemplate)\n");
 				}
 			}
 			writer.write("\tmobileTemplate.setWeaponTemplateVector(weaponTemplates)\n");
@@ -963,32 +1150,45 @@ public class MobileScriptBuilder {
 			writer.write("\tmobileTemplate.setAttacks(attacks)");
 			writer.newLine();
 			
-			writer.write("\tcore.spawnService.addMobileTemplate('" + mobile.getCreatureName() + "', mobileTemplate)\n\treturn");
+			writer.write("\tcore.spawnService.addMobileTemplate('" + mobile.getTemplateName() + "', mobileTemplate)\n\treturn");
 			
 			writer.close();
+			
+			mobile.setDirty(false);
+			mobilesTree.updateUI();
 		} catch (Exception e) {
 			Helpers.showExceptionError(frmPswgToolsMbs, e.getLocalizedMessage());
+			e.printStackTrace();
 		}
 	}
 	
 	private void saveCurrentValues() {
+		try {
 		Mobile mobileTemplate = (Mobile) ((DefaultMutableTreeNode) mobilesTree.getSelectionPath().getLastPathComponent()).getUserObject();
-		System.out.println("Saved values for Template: " + mobileTemplate.getCreatureName());
 		
 		mobileTemplate.setCreatureName(tbCreatureName.getText());
 		mobileTemplate.setScriptLocation(tbScriptLocation.getText());
 		
 		mobileTemplate.setLevel((int) tbCreatureLevel.getValue());
-		mobileTemplate.setMinLevel((int) tbMinLevel.getValue());
-		mobileTemplate.setMaxLevel((int) tbMaxLevel.getValue());
-		mobileTemplate.setAttackRange((int) tbAttackRange.getValue());
-		mobileTemplate.setAttackSpeed((float) tbAttackSpeed.getValue());
+		mobileTemplate.setMinLevel(Integer.valueOf(tbMinLevel.getText()));
+		mobileTemplate.setMaxLevel(Integer.valueOf(tbMaxLevel.getText()));
+		mobileTemplate.setAttackRange(Integer.valueOf(tbAttackRange.getText()));
+		mobileTemplate.setAttackSpeed(Float.valueOf(tbAttackSpeed.getText()));
+		mobileTemplate.setAssistRange(Integer.valueOf(tbAssistRange.getText()));
 
-		mobileTemplate.setDifficulty(cmbDefaultAttack.getSelectedIndex());
+		mobileTemplate.setDifficulty(cmbDifficulty.getSelectedIndex());
 		mobileTemplate.setDefaultAttack((String) cmbDefaultAttack.getSelectedItem()); 
 		mobileTemplate.setWeaponType(cmbWeaponType.getSelectedIndex());
 		
+		mobileTemplate.setSocialGroup(tbSocialGroup.getText());
+		mobileTemplate.setFaction((String) cmbFaction.getSelectedItem());
+		mobileTemplate.setFactionStatus(cmbFactionStatus.getSelectedIndex());
+		mobileTemplate.setMinSpawnDistance(Integer.valueOf(tbMinSpawnDistance.getText()));
+		mobileTemplate.setMaxSpawnDistance(Integer.valueOf(tbMaxSpawnDistance.getText()));
+		
 		mobileTemplate.setDeathblowEnabled(chckbxDeathblowEnabled.isSelected());
+		mobileTemplate.setStalker(chckbxStalker.isSelected());
+		mobileTemplate.setHarvestable(chckbxHarvestable.isSelected());
 		
 		if (creatureTemps.getSize() > 0) {
 			Object[] objArray = creatureTemps.toArray();
@@ -1030,7 +1230,10 @@ public class MobileScriptBuilder {
 		if (modifiedTemplates.size() >= 2 && !btnBuildAll.isEnabled())
 			btnBuildAll.setEnabled(true);
 		
-		mobilesTree.updateUI(); // Show Asterisk 
+		mobilesTree.updateUI(); // Show Asterisk
+		System.out.println("Saved values for Template: " + mobileTemplate.getCreatureName());
+		} catch (Exception e) { Helpers.showExceptionError(frmPswgToolsMbs, e.getLocalizedMessage());}
+		
 	}
 	
 	@SuppressWarnings({ "unchecked", "rawtypes", "serial" })
@@ -1054,6 +1257,14 @@ public class MobileScriptBuilder {
 				}
 			});
 		}
+	}
+	
+	private void tryBackup(File file, int count) throws IOException {
+		File backup = new File(file.getAbsolutePath() + ".bak." + String.valueOf(count));
+		if (!backup.exists())
+			Files.copy(file.toPath(), backup.toPath());
+		else
+			tryBackup(backup, count++);
 	}
 	public void setActiveMobile(Mobile activeMobile) {
 		this.activeMobile = activeMobile;
@@ -1099,6 +1310,14 @@ public class MobileScriptBuilder {
 	
 	public JList<String> getListCreatureTemps() {
 		return listCreatureTemps;
+	}
+
+	public DefaultListModel getAttacks() {
+		return attacks;
+	}
+
+	public void setAttacks(DefaultListModel attacks) {
+		this.attacks = attacks;
 	}
 
 	public JTree getMobilesTree() {

@@ -8,23 +8,36 @@ public class Mobile {
 	private static final long serialVersionUID = 1L;
 	
 	private String scriptLocation;
+	private String templateName;
 	private String creatureName;
+	
 	private String defaultAttack;
+	private String socialGroup;
 	private int level;
 	private int minLevel;
 	private int maxLevel;
 	private int difficulty;
 	private int attackRange;
 	private int weaponType;
+	private int minSpawnDistance;
+	private int maxSpawnDistance;
+	private int assistRange;
+	private int respawnTime;
+	private boolean harvestable;
+	private boolean stalker;
+	private String faction;
+	private int factionStatus;
 	private float attackSpeed;
 	private boolean deathblowEnabled;
+	private String meatType, milkType, boneType, hideType;
+	private int meatAmount, milkAmount, boneAmount, hideAmount;
 	private Vector<String> creatureTemplates = new Vector<String>();
 	private Vector<Weapon> weaponTemplates = new Vector<Weapon>();
 	private Vector<String> attacks = new Vector<String>();
 	private boolean dirty;
 	
-	public Mobile(String creatureName, String scriptLocation) { 
-		this.creatureName = creatureName;
+	public Mobile(String template, String scriptLocation) { 
+		this.templateName = template;
 		this.scriptLocation = scriptLocation;
 	}
 
@@ -175,6 +188,171 @@ public class Mobile {
 	}
 
 
+	public String getSocialGroup() {
+		return socialGroup;
+	}
+
+
+	public void setSocialGroup(String socialGroup) {
+		this.socialGroup = socialGroup;
+	}
+
+
+	public int getMinSpawnDistance() {
+		return minSpawnDistance;
+	}
+
+
+	public void setMinSpawnDistance(int minSpawnDistance) {
+		this.minSpawnDistance = minSpawnDistance;
+	}
+
+
+	public int getMaxSpawnDistance() {
+		return maxSpawnDistance;
+	}
+
+
+	public void setMaxSpawnDistance(int maxSpawnDistance) {
+		this.maxSpawnDistance = maxSpawnDistance;
+	}
+
+
+	public int getAssistRange() {
+		return assistRange;
+	}
+
+
+	public void setAssistRange(int assistRange) {
+		this.assistRange = assistRange;
+	}
+
+
+	public int getRespawnTime() {
+		return respawnTime;
+	}
+
+
+	public void setRespawnTime(int respawnTime) {
+		this.respawnTime = respawnTime;
+	}
+
+
+	public boolean isHarvestable() {
+		return harvestable;
+	}
+
+
+	public void setHarvestable(boolean harvestable) {
+		this.harvestable = harvestable;
+	}
+
+
+	public String getFaction() {
+		return faction;
+	}
+
+
+	public void setFaction(String faction) {
+		this.faction = faction;
+	}
+
+
+	public int getFactionStatus() {
+		return factionStatus;
+	}
+
+
+	public void setFactionStatus(int factionStatus) {
+		this.factionStatus = factionStatus;
+	}
+
+
+	public String getMeatType() {
+		return meatType;
+	}
+
+
+	public void setMeatType(String meatType) {
+		this.meatType = meatType;
+	}
+
+
+	public String getMilkType() {
+		return milkType;
+	}
+
+
+	public void setMilkType(String milkType) {
+		this.milkType = milkType;
+	}
+
+
+	public String getBoneType() {
+		return boneType;
+	}
+
+
+	public void setBoneType(String boneType) {
+		this.boneType = boneType;
+	}
+
+
+	public String getHideType() {
+		return hideType;
+	}
+
+
+	public void setHideType(String hideType) {
+		this.hideType = hideType;
+	}
+
+
+	public int getMeatAmount() {
+		return meatAmount;
+	}
+
+
+	public void setMeatAmount(int meatAmount) {
+		this.meatAmount = meatAmount;
+	}
+
+
+	public int getMilkAmount() {
+		return milkAmount;
+	}
+
+
+	public void setMilkAmount(int milkAmount) {
+		this.milkAmount = milkAmount;
+	}
+
+
+	public int getBoneAmount() {
+		return boneAmount;
+	}
+
+
+	public void setBoneAmount(int boneAmount) {
+		this.boneAmount = boneAmount;
+	}
+
+
+	public int getHideAmount() {
+		return hideAmount;
+	}
+
+
+	public void setHideAmount(int hideAmount) {
+		this.hideAmount = hideAmount;
+	}
+
+
+	public void setAttacks(Vector<String> attacks) {
+		this.attacks = attacks;
+	}
+
+
 	public void addCreatureTemplate(String template) {
 		creatureTemplates.add(template);
 	}
@@ -182,10 +360,30 @@ public class Mobile {
 	public void addAttack(String attack) {
 		attacks.add(attack);
 	}
+	public boolean isStalker() {
+		return stalker;
+	}
+
+
+	public void setStalker(boolean stalker) {
+		this.stalker = stalker;
+	}
+
+
 	@Override
 	public String toString() {
 		if (dirty)
-			return  "*" + creatureName;
-		else return creatureName;
+			return  "*" + templateName;
+		else return templateName;
+	}
+
+
+	public String getTemplateName() {
+		return templateName;
+	}
+
+
+	public void setTemplateName(String templateName) {
+		this.templateName = templateName;
 	}
 }
